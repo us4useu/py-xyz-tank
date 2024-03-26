@@ -36,3 +36,24 @@ class PathBuilder:
                     iy = iy + 1
             iz = iz + 1
         return path
+
+    def display_path(self, path):
+        
+        x = [t[0] for t in path]
+        y = [t[1] for t in path]
+        z = [t[2] for t in path]
+
+        # Plot
+        #fig = plt.figure()
+        #ax = fig.add_subplot(111, projection='3d')
+        #ax.scatter(x, y, z, color='b', marker='o')
+
+        #for i in range(len(path) - 1):
+        #    ax.plot([x[i], x[i+1]], [y[i], y[i+1]], [z[i], z[i+1]], color='b')
+
+        # Customize labels
+        #ax.set_xlabel('X')
+        #ax.set_ylabel('Y')
+        #ax.set_zlabel('Z')
+
+        #plt.show()
