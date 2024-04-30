@@ -22,7 +22,7 @@ class XyzController :
     def is_target_reached_x(self) :
         #print(str(self.motorX.get_position_reached()))
         if self.motorX.get_position_reached() == 1 :
-            print("target X reached")
+            #print("target X reached")
             return True
         else :
             return False
@@ -30,7 +30,7 @@ class XyzController :
     def is_target_reached_y(self) :
         #print(str(self.motorY.get_position_reached()))
         if self.motorY.get_position_reached() == 1 :
-            print("target Y reached")
+            #print("target Y reached")
             return True
         else :
             return False
@@ -38,7 +38,7 @@ class XyzController :
     def is_target_reached_z(self) :
         #print(str(self.motorZ.get_position_reached()))
         if self.motorZ.get_position_reached() == 1 :
-            print("target Z reached")
+            #print("target Z reached")
             return True
         else :
             return False
@@ -70,6 +70,27 @@ class XyzController :
         else :
             return False
         
+    def is_end_reached_x(self) :
+        #print("X stop = " + str(self.motorX.get_axis_parameter(self.motorX.AP.LeftEndstop)))
+        if self.motorX.get_axis_parameter(self.motorX.AP.RightEndstop) == 1 :
+            return True
+        else :
+            return False
+
+    def is_end_reached_y(self) :
+        #print("Y stop = " + str(self.motorY.get_axis_parameter(self.motorY.AP.LeftEndstop)))
+        if self.motorY.get_axis_parameter(self.motorY.AP.RightEndstop) == 1 :
+            return True
+        else :
+            return False
+
+    def is_end_reached_z(self) :
+        #print("Z stop = " + str(self.motorX.get_axis_parameter(self.motorZ.AP.LeftEndstop)))
+        if self.motorZ.get_axis_parameter(self.motorZ.AP.RightEndstop) == 1 :
+            return True
+        else :
+            return False
+        
     def stop(self) :
         self.motorX.stop()
         self.motorY.stop()
@@ -77,7 +98,7 @@ class XyzController :
 
 
     def goto_home(self) :
-        velocity = 25000
+        velocity = 50000
         self.motorX.move_to(-999999999, velocity)
         self.motorY.move_to(-999999999, velocity)
         self.motorZ.move_to(-999999999, velocity)
@@ -87,6 +108,20 @@ class XyzController :
 
         self.stop()
         print("XYZ home endstops reached")
+
+        return
+    
+    def goto_end(self) :
+        velocity = 50000
+        self.motorX.move_to(999999999, velocity)
+        self.motorY.move_to(999999999, velocity)
+        self.motorZ.move_to(999999999, velocity)
+
+        while self.is_end_reached_x() != True or self.is_end_reached_y() != True or self.is_end_reached_z() != True:
+            pass
+
+        self.stop()
+        print("XYZ far endstops reached")
 
         return
     
@@ -123,6 +158,13 @@ class XyzController :
         y = self.motorY.get_actual_position()
         z = self.motorZ.get_actual_position()
         return x, y, z
+
+    def get_actual_pos_mm(self, usteps_mm) :
+        x, y, z = self.get_actual_pos()
+        x_mm = x/usteps_mm
+        y_mm = y/usteps_mm
+        z_mm = z/usteps_mm
+        return x_mm, y_mm, z_mm
     
     def set_usteps(self, res) :
         if res > 8 :

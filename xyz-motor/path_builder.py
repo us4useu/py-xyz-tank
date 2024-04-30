@@ -12,7 +12,7 @@ class PathBuilder:
 
     def generate_path(self):
         path = []
-        subpath = []
+        #subpath = []
         iz = 0
         iy = 0
         for z in range(self.startZ, self.endZ + 1, self.stepZ):
