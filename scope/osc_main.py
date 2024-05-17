@@ -2,34 +2,32 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from osc_ps5000a import ScopePS5000a as scope
-from matplotlib.animation import FuncAnimation
+import matplotlib.animation as animation
 
 osc = scope()
 osc.configChannelA()
-osc.configChannelB()
+osc.configChannelB(0)
 osc.configTrigger()
-timeIntervalns = osc.setAcquisition()
+cmaxSamples, timeIntervalns = osc.setAcquisition(4096, 256)
+times = np.linspace(0, (cmaxSamples - 1) * timeIntervalns, cmaxSamples)
 
-# Show the plot
-plt.show()
+fig, ax = plt.subplots()
+chA, = ax.plot([], [], label='Channel A')
+chB, = ax.plot([], [], label='Channel B')
+ax.set_ylim(-10000, 10000)
+ax.set_xlim(0, times[len(times)-1])
 
-for n in range(2):
-    print(n)
+def update(frame):
     cmaxSamples = osc.runBlockAcquisition()
-    adc2mVChAMax, adc2mVChBMax = osc.getData()
+    adc2mVChAMax = osc.getData() #, adc2mVChBMax = osc.getData()
+    chA.set_data(times, adc2mVChAMax)
+    #chB.set_data(times, adc2mVChBMax)
 
-    # Create time data
-    time = np.linspace(0, (cmaxSamples - 1) * timeIntervalns, cmaxSamples)
+    return chA, chB
 
-    print(cmaxSamples)
-    print(timeIntervalns)
-
-    # plot data from channel A and B
-    plt.plot(time, adc2mVChAMax[:])
-    plt.plot(time, adc2mVChBMax[:])
-    plt.xlabel('Time (ns)')
-    plt.ylabel('Voltage (mV)')
-    plt.show()
+update(0)
+ani = animation.FuncAnimation(fig, update, frames=range(100), blit=True)
+plt.show()
 
 osc.close()
 

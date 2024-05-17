@@ -125,25 +125,38 @@ class XyzController :
 
         return
     
-    def goto_xyz_absolute(self, x, y, z) :
+    def goto_xyz_absolute(self, x, y, z, wait = True) :
         velocity = 100000
         self.motorX.move_to(x, velocity)
         self.motorY.move_to(y, velocity)
         self.motorZ.move_to(z, velocity)
 
-        while(not(self.is_target_reached())):
-            pass
+        if wait == True:
+            while(not(self.is_target_reached())):
+                if self.is_end_reached_x() or self.is_home_reached_x:
+                    self.motorX.stop()
+                if self.is_end_reached_y() or self.is_home_reached_y:
+                    self.motorY.stop()
+                if self.is_end_reached_z() or self.is_home_reached_z:
+                    self.motorZ.stop()
+                pass
+            return
 
-        return
-
-    def goto_xyz_relative(self, x, y, z) :
+    def goto_xyz_relative(self, x, y, z, wait = True) :
         velocity = 100000
         self.motorX.move_by(x, velocity)
         self.motorY.move_by(y, velocity)
         self.motorZ.move_by(z, velocity)
 
-        while(not(self.is_target_reached())):
-            pass
+        if wait == True:
+            while(not(self.is_target_reached())):
+                #if self.is_end_reached_x() or self.is_home_reached_x:
+                #    self.motorX.stop()
+                #if self.is_end_reached_y() or self.is_home_reached_y:
+                #    self.motorY.stop()
+                #if self.is_end_reached_z() or self.is_home_reached_z:
+                #    self.motorZ.stop()
+                pass
 
         return
 

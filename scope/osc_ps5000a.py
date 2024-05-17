@@ -46,27 +46,49 @@ class ScopePS5000a :
 
             assert_pico_ok(self.status["changePowerSource"])
 
-    def configChannelA(self) :
+    def configChannelA(self, enabled = 1) :
         # Set up channel A
         # handle = chandle
         channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_A"]
         # enabled = 1
         coupling_type = ps.PS5000A_COUPLING["PS5000A_DC"]
-        self.chARange = ps.PS5000A_RANGE["PS5000A_20V"]
+        self.chARange = ps.PS5000A_RANGE["PS5000A_10V"]
         # analogue offset = 0 V
-        self.status["setChA"] = ps.ps5000aSetChannel(self.chandle, channel, 1, coupling_type, self.chARange, 0)
+        self.status["setChA"] = ps.ps5000aSetChannel(self.chandle, channel, enabled, coupling_type, self.chARange, 0)
         assert_pico_ok(self.status["setChA"])
     
-    def configChannelB(self) :
+    def configChannelB(self, enabled = 1) :
         # Set up channel B
         # handle = chandle
         channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
         # enabled = 1
         coupling_type = ps.PS5000A_COUPLING["PS5000A_DC"]
-        self.chBRange = ps.PS5000A_RANGE["PS5000A_2V"]
+        self.chBRange = ps.PS5000A_RANGE["PS5000A_5V"]
         # analogue offset = 0 V
-        self.status["setChB"] = ps.ps5000aSetChannel(self.chandle, channel, 1, coupling_type, self.chBRange, 0)
+        self.status["setChB"] = ps.ps5000aSetChannel(self.chandle, channel, enabled, coupling_type, self.chBRange, 0)
         assert_pico_ok(self.status["setChB"])
+
+    def configChannelC(self, enabled = 1) :
+        # Set up channel B
+        # handle = chandle
+        channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_C"]
+        # enabled = 1
+        coupling_type = ps.PS5000A_COUPLING["PS5000A_DC"]
+        self.chCRange = ps.PS5000A_RANGE["PS5000A_5V"]
+        # analogue offset = 0 V
+        self.status["setChC"] = ps.ps5000aSetChannel(self.chandle, channel, enabled, coupling_type, self.chCRange, 0)
+        assert_pico_ok(self.status["setChC"])
+
+    def configChannelD(self, enabled = 1) :
+        # Set up channel B
+        # handle = chandle
+        channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_D"]
+        # enabled = 1
+        coupling_type = ps.PS5000A_COUPLING["PS5000A_DC"]
+        self.chDRange = ps.PS5000A_RANGE["PS5000A_5V"]
+        # analogue offset = 0 V
+        self.status["setChD"] = ps.ps5000aSetChannel(self.chandle, channel, enabled, coupling_type, self.chDRange, 0)
+        assert_pico_ok(self.status["setChD"])
     
     def configTrigger(self) :
         # find maximum ADC count value
@@ -79,25 +101,25 @@ class ScopePS5000a :
         # Set up single trigger
         # handle = chandle
         # enabled = 1
-        source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_A"]
+        source = ps.PS5000A_CHANNEL["PS5000A_EXTERNAL"]
         threshold = int(mV2adc(500, self.chARange, self.maxADC))
         # direction = PS5000A_RISING = 2
         # delay = 0 s
-        # auto Trigger = 1000 ms
-        self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, 0, 1000)
+        # auto Trigger = 1 ms
+        self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, 0, 0)
         assert_pico_ok(self.status["trigger"])
 
-    def setAcquisition(self) :
+    def setAcquisition(self, samples, offset) :
         # Set number of pre and post trigger samples to be collected
-        self.preTriggerSamples = 1024 
-        self.postTriggerSamples = 8192 - self.preTriggerSamples
+        self.preTriggerSamples = offset 
+        self.postTriggerSamples = samples - self.preTriggerSamples
         self.maxSamples = self.preTriggerSamples + self.postTriggerSamples
 
         # Get timebase information
         # Warning: When using this example it may not be possible to access all Timebases as all channels are enabled by default when opening the scope.  
         # To access these Timebases, set any unused analogue channels to off.
         # handle = chandle
-        self.timebase = 3
+        self.timebase = 1
         # noSamples = maxSamples
         # pointer to timeIntervalNanoseconds = ctypes.byref(timeIntervalns)
         # pointer to maxSamples = ctypes.byref(returnedMaxSamples)
@@ -107,7 +129,9 @@ class ScopePS5000a :
         self.status["getTimebase2"] = ps.ps5000aGetTimebase2(self.chandle, self.timebase, self.maxSamples, ctypes.byref(timeIntervalns), ctypes.byref(returnedMaxSamples), 0)
         assert_pico_ok(self.status["getTimebase2"])
 
-        return timeIntervalns.value
+        self.cmaxSamples = ctypes.c_int32(self.maxSamples)
+
+        return self.cmaxSamples.value, timeIntervalns.value
 
     def runBlockAcquisition(self) :
         # Run block capture
@@ -119,7 +143,6 @@ class ScopePS5000a :
         # segment index = 0
         # lpReady = None (using ps5000aIsReady rather than ps5000aBlockReady)
         # pParameter = None
-        print("timebase = " + str(self.timebase))
         self.status["runBlock"] = ps.ps5000aRunBlock(self.chandle, self.preTriggerSamples, self.postTriggerSamples, self.timebase, None, 0, None, None)
         assert_pico_ok(self.status["runBlock"])
 
@@ -133,8 +156,8 @@ class ScopePS5000a :
         # Create buffers ready for assigning pointers for data collection
         self.bufferAMax = (ctypes.c_int16 * self.maxSamples)()
         self.bufferAMin = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
-        self.bufferBMax = (ctypes.c_int16 * self.maxSamples)()
-        self.bufferBMin = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
+        #self.bufferBMax = (ctypes.c_int16 * self.maxSamples)()
+        #self.bufferBMin = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
 
         # Set data buffer location for data collection from channel A
         # handle = chandle
@@ -149,22 +172,18 @@ class ScopePS5000a :
 
         # Set data buffer location for data collection from channel B
         # handle = chandle
-        source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
+        #source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
         # pointer to buffer max = ctypes.byref(bufferBMax)
         # pointer to buffer min = ctypes.byref(bufferBMin)
         # buffer length = maxSamples
         # segment index = 0
         # ratio mode = PS5000A_RATIO_MODE_NONE = 0
-        self.status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferBMax), ctypes.byref(self.bufferBMin), self.maxSamples, 0, 0)
-        assert_pico_ok(self.status["setDataBuffersB"])
+        #self.status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferBMax), ctypes.byref(self.bufferBMin), self.maxSamples, 0, 0)
+        #assert_pico_ok(self.status["setDataBuffersB"])
 
         # create overflow loaction
         self.overflow = ctypes.c_int16()
         # create converted type maxSamples
-        self.cmaxSamples = ctypes.c_int32(self.maxSamples)
-        print(self.cmaxSamples)
-
-        return self.cmaxSamples.value
 
     def getData(self) :
         # Retried data from scope to buffers assigned above
@@ -179,9 +198,9 @@ class ScopePS5000a :
 
         # convert ADC counts data to mV
         adc2mVChAMax =  adc2mV(self.bufferAMax, self.chARange, self.maxADC)
-        adc2mVChBMax =  adc2mV(self.bufferBMax, self.chBRange, self.maxADC)
+        #adc2mVChBMax =  adc2mV(self.bufferBMax, self.chBRange, self.maxADC)
 
-        return adc2mVChAMax, adc2mVChBMax
+        return adc2mVChAMax#, adc2mVChBMax
     
     def close(self) : 
         # Stop the scope

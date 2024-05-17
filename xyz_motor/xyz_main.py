@@ -1,9 +1,4 @@
-import pytrinamic
-from pytrinamic.connections import ConnectionManager
-from pytrinamic.modules import TMCM1276
-import can
 import time
-import sys
 from path_builder import PathBuilder
 import numpy as np
 import matplotlib.pyplot as plt
