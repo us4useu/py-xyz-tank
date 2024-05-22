@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from mpl_toolkits.mplot3d import Axes3D
-import time
 
 import matplotlib
 matplotlib.use('Agg')
@@ -31,22 +30,22 @@ def draw_figure(canvas, rect):
 
     # Convert raw_data to a pygame image
     surf = pygame.image.fromstring(raw_data, size, "RGBA")
-    screen.blit(surf, rect)
+    return surf
 
-def create_3d_plot(x, y, z):
+def create_3d_plot():
     fig = plt.figure(figsize=(MAIN_PLOT_WIDTH / 100, MAIN_PLOT_HEIGHT / 100))
     ax = fig.add_subplot(111, projection='3d')
 
     # Plot the single point
-    ax.scatter([x], [y], [z], c='r', marker='o')
+    point = ax.scatter([], [], [], c='r', marker='o')
+
+    # Draw dashed lines to the planes
+    ax.plot([], [], [], color='gray', linestyle='--', alpha=0.5)
+    ax.plot([], [], [], color='gray', linestyle='--', alpha=0.5)
+    ax.plot([], [], [], color='gray', linestyle='--', alpha=0.5)
 
     # Draw transparent planes
-    max_range = 1.0
-    ax.plot([x, x], [y, y], [0, z], color='gray', linestyle='--', alpha=0.5)
-    ax.plot([x, x], [0, y], [z, z], color='gray', linestyle='--', alpha=0.5)
-    ax.plot([0, x], [y, y], [z, z], color='gray', linestyle='--', alpha=0.5)
-
-    # Draw transparent planes
+    max_range = 500
     xx, yy = np.meshgrid([0, max_range], [0, max_range])
     ax.plot_surface(xx, yy, np.zeros_like(xx), color='gray', alpha=0.1)
     ax.plot_surface(xx, np.zeros_like(yy), yy, color='gray', alpha=0.1)
@@ -55,45 +54,68 @@ def create_3d_plot(x, y, z):
     ax.set_xlabel('X Axis')
     ax.set_ylabel('Y Axis')
     ax.set_zlabel('Z Axis')
-    ax.set_xlim(0, max_range)
-    ax.set_ylim(0, max_range)
-    ax.set_zlim(0, max_range)
-    return fig
+    
+    # Flip the axes
+    ax.set_xlim(max_range, 0)
+    ax.set_ylim(max_range, 0)
+    ax.set_zlim(max_range, 0)
+
+    return fig, ax, point
+
+# Pre-create the 3D plot
+fig, ax, point = create_3d_plot()
+
+# Initial data
+x_data = np.random.rand(100) * 500
+y_data = np.random.rand(100) * 500
+z_data = np.random.rand(100) * 500
+
+def update(frame):
+    """Update function for FuncAnimation."""
+    global x_data, y_data, z_data
+
+    # Update data
+    x_data = np.random.rand(100) * 500
+    y_data = np.random.rand(100) * 500
+    z_data = np.random.rand(100) * 500
+
+    # Update the plot
+    point._offsets3d = (x_data, y_data, z_data)
+
+    # Redraw the canvas
+    canvas = FigureCanvas(fig)
+    plot_surf = draw_figure(canvas, (0, 0, MAIN_PLOT_WIDTH, MAIN_PLOT_HEIGHT))
+    plt.close(fig)
+
+    return plot_surf
 
 # Main loop
 running = True
-start_time = time.time()
-update_interval = 1  # seconds
-
-# Initial data
-x_data = np.random.rand(1)[0]
-y_data = np.random.rand(1)[0]
-z_data = np.random.rand(1)[0]
+clock = pygame.time.Clock()
+frame = 0
 
 while running:
-    current_time = time.time()
-    if current_time - start_time >= update_interval:
-        # Update data
-        x_data = np.random.rand(1)[0]
-        y_data = np.random.rand(1)[0]
-        z_data = np.random.rand(1)[0]
-        start_time = current_time
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    
+
+    # Update animation
+    plot_surf = update(frame)
+
     # Clear the screen
     screen.fill((255, 255, 255))
-    
-    # Draw the 3D plot
-    fig = create_3d_plot(x_data, y_data, z_data)
-    canvas = FigureCanvas(fig)
-    draw_figure(canvas, (0, 0, MAIN_PLOT_WIDTH, MAIN_PLOT_HEIGHT))
-    plt.close(fig)
-    
+
+    # Blit the plot onto the screen
+    screen.blit(plot_surf, (0, 0))
+
+    # Update frame
+    frame += 1
+    if frame >= len(x_data):
+        frame = 0
+
     # Update the display
     pygame.display.flip()
+    #clock.tick(30)
 
 # Quit Pygame
 pygame.quit()

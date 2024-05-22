@@ -52,10 +52,12 @@ class ScopePS5000a :
         channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_A"]
         # enabled = 1
         coupling_type = ps.PS5000A_COUPLING["PS5000A_DC"]
-        self.chARange = ps.PS5000A_RANGE["PS5000A_10V"]
+        self.chARange = ps.PS5000A_RANGE["PS5000A_50MV"]
         # analogue offset = 0 V
         self.status["setChA"] = ps.ps5000aSetChannel(self.chandle, channel, enabled, coupling_type, self.chARange, 0)
         assert_pico_ok(self.status["setChA"])
+
+        self.status["setBWChA"] = ps.ps5000aSetBandwidthFilter(self.chandle, channel, 1)
     
     def configChannelB(self, enabled = 1) :
         # Set up channel B
@@ -63,7 +65,7 @@ class ScopePS5000a :
         channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
         # enabled = 1
         coupling_type = ps.PS5000A_COUPLING["PS5000A_DC"]
-        self.chBRange = ps.PS5000A_RANGE["PS5000A_5V"]
+        self.chBRange = ps.PS5000A_RANGE["PS5000A_20V"]
         # analogue offset = 0 V
         self.status["setChB"] = ps.ps5000aSetChannel(self.chandle, channel, enabled, coupling_type, self.chBRange, 0)
         assert_pico_ok(self.status["setChB"])
@@ -119,8 +121,8 @@ class ScopePS5000a :
         # Warning: When using this example it may not be possible to access all Timebases as all channels are enabled by default when opening the scope.  
         # To access these Timebases, set any unused analogue channels to off.
         # handle = chandle
-        self.timebase = 1
-        # noSamples = maxSamples
+        self.timebase = 3 # 1 = 2ns, 2 = 4ns, 3 = 8ns, 4 = 16ns, 5 = 32ns, 6 = 48ns, 7 = 64ns, 8 = 80ns
+        # noSampzzzzzzzzzzzzzzzzzzzzzzzzzzles = maxSamples
         # pointer to timeIntervalNanoseconds = ctypes.byref(timeIntervalns)
         # pointer to maxSamples = ctypes.byref(returnedMaxSamples)
         # segment index = 0
@@ -156,8 +158,8 @@ class ScopePS5000a :
         # Create buffers ready for assigning pointers for data collection
         self.bufferAMax = (ctypes.c_int16 * self.maxSamples)()
         self.bufferAMin = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
-        #self.bufferBMax = (ctypes.c_int16 * self.maxSamples)()
-        #self.bufferBMin = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
+        self.bufferBMax = (ctypes.c_int16 * self.maxSamples)()
+        self.bufferBMin = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
 
         # Set data buffer location for data collection from channel A
         # handle = chandle
@@ -172,14 +174,14 @@ class ScopePS5000a :
 
         # Set data buffer location for data collection from channel B
         # handle = chandle
-        #source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
+        source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
         # pointer to buffer max = ctypes.byref(bufferBMax)
         # pointer to buffer min = ctypes.byref(bufferBMin)
         # buffer length = maxSamples
         # segment index = 0
         # ratio mode = PS5000A_RATIO_MODE_NONE = 0
-        #self.status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferBMax), ctypes.byref(self.bufferBMin), self.maxSamples, 0, 0)
-        #assert_pico_ok(self.status["setDataBuffersB"])
+        self.status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferBMax), ctypes.byref(self.bufferBMin), self.maxSamples, 0, 0)
+        assert_pico_ok(self.status["setDataBuffersB"])
 
         # create overflow loaction
         self.overflow = ctypes.c_int16()
@@ -198,9 +200,9 @@ class ScopePS5000a :
 
         # convert ADC counts data to mV
         adc2mVChAMax =  adc2mV(self.bufferAMax, self.chARange, self.maxADC)
-        #adc2mVChBMax =  adc2mV(self.bufferBMax, self.chBRange, self.maxADC)
+        adc2mVChBMax =  adc2mV(self.bufferBMax, self.chBRange, self.maxADC)
 
-        return adc2mVChAMax#, adc2mVChBMax
+        return adc2mVChAMax, adc2mVChBMax
     
     def close(self) : 
         # Stop the scope
