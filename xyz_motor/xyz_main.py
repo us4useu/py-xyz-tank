@@ -10,10 +10,10 @@ usteps_set = 8
 
 usteps_mm = 40 * 256
 
-pb = PathBuilder(50, 50, 50, 150, 150, 150, 5, 5, 5)
+pb = PathBuilder(50, 50, 50, 150, 150, 150, 0.5, 0.5, 0.5)
 path = pb.generate_path()
-#for i in path :
-    #print(i)
+for i in path :
+    print(i)
 
 steps = len(path)
 

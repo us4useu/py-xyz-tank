@@ -131,13 +131,13 @@ class XyzController :
         self.motorY.move_to(y, velocity)
         self.motorZ.move_to(z, velocity)
 
-        if wait == True:
+        if wait:
             while(not(self.is_target_reached())):
-                if self.is_end_reached_x() or self.is_home_reached_x:
+                if self.is_end_reached_x() or self.is_home_reached_x():
                     self.motorX.stop()
-                if self.is_end_reached_y() or self.is_home_reached_y:
+                if self.is_end_reached_y() or self.is_home_reached_y():
                     self.motorY.stop()
-                if self.is_end_reached_z() or self.is_home_reached_z:
+                if self.is_end_reached_z() or self.is_home_reached_z():
                     self.motorZ.stop()
                 pass
             return
@@ -148,7 +148,7 @@ class XyzController :
         self.motorY.move_by(y, velocity)
         self.motorZ.move_by(z, velocity)
 
-        if wait == True:
+        if wait:
             while(not(self.is_target_reached())):
                 #if self.is_end_reached_x() or self.is_home_reached_x:
                 #    self.motorX.stop()

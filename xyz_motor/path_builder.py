@@ -1,37 +1,47 @@
 class PathBuilder:
     def __init__(self, startX, startY, startZ, endX, endY, endZ, stepX, stepY, stepZ):
-        self.startX = startX
-        self.startY = startY
-        self.startZ = startZ
-        self.endX = endX #mm
-        self.endY = endY
-        self.endZ = endZ
-        self.stepX = stepX
-        self.stepY = stepY
-        self.stepZ = stepZ
+        self.startX = float(startX)
+        self.startY = float(startY)
+        self.startZ = float(startZ)
+        self.endX = float(endX) #mm
+        self.endY = float(endY)
+        self.endZ = float(endZ)
+        self.stepX = float(stepX)
+        self.stepY = float(stepY)
+        self.stepZ = float(stepZ)
+
+    def _frange(self, start, stop, step, up = True):
+        if up:
+            while start < stop:
+                yield start
+                start += step
+        else:
+            while start > stop:
+                yield start
+                start += step
 
     def generate_path(self):
         path = []
         #subpath = []
         iz = 0
         iy = 0
-        for z in range(self.startZ, self.endZ + 1, self.stepZ):
+        for z in self._frange(self.startZ, self.endZ + self.stepZ, self.stepZ):
             if iz % 2 == 0 :
-                for y in range(self.startY, self.endY + 1, self.stepY):
+                for y in self._frange(self.startY, self.endY + self.stepY, self.stepY):
                     if iy % 2 == 0 :
-                        for x in range(self.startX, self.endX + 1, self.stepX):
+                        for x in self._frange(self.startX, self.endX + self.stepX, self.stepX):
                             path.append((x, y, z))
                     else :
-                        for x in range(self.endX, self.startX - 1, -self.stepX):
+                        for x in self._frange(self.endX, self.startX - self.stepX, -self.stepX, False):
                             path.append((x, y, z))
                     iy = iy + 1
             else :
-                for y in range(self.endY, self.startY - 1, -self.stepY):
+                for y in self._frange(self.endY, self.startY - self.stepY, -self.stepY, False):
                     if iy % 2 == 0 :
-                        for x in range(self.startX, self.endX + 1, self.stepX):
+                        for x in self._frange(self.startX, self.endX + self.stepX, self.stepX):
                             path.append((x, y, z))
                     else :
-                        for x in range(self.endX, self.startX - 1, -self.stepX):
+                        for x in self._frange(self.endX, self.startX - self.stepX, -self.stepX, False):
                             path.append((x, y, z))
                     iy = iy + 1
             iz = iz + 1

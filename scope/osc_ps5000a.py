@@ -174,14 +174,14 @@ class ScopePS5000a :
 
         # Set data buffer location for data collection from channel B
         # handle = chandle
-        source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
+        #source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
         # pointer to buffer max = ctypes.byref(bufferBMax)
         # pointer to buffer min = ctypes.byref(bufferBMin)
         # buffer length = maxSamples
         # segment index = 0
         # ratio mode = PS5000A_RATIO_MODE_NONE = 0
-        self.status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferBMax), ctypes.byref(self.bufferBMin), self.maxSamples, 0, 0)
-        assert_pico_ok(self.status["setDataBuffersB"])
+        #self.status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferBMax), ctypes.byref(self.bufferBMin), self.maxSamples, 0, 0)
+        #assert_pico_ok(self.status["setDataBuffersB"])
 
         # create overflow loaction
         self.overflow = ctypes.c_int16()
@@ -200,9 +200,9 @@ class ScopePS5000a :
 
         # convert ADC counts data to mV
         adc2mVChAMax =  adc2mV(self.bufferAMax, self.chARange, self.maxADC)
-        adc2mVChBMax =  adc2mV(self.bufferBMax, self.chBRange, self.maxADC)
+        #adc2mVChBMax =  adc2mV(self.bufferBMax, self.chBRange, self.maxADC)
 
-        return adc2mVChAMax, adc2mVChBMax
+        return adc2mVChAMax#, adc2mVChBMax
     
     def close(self) : 
         # Stop the scope
