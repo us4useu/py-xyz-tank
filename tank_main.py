@@ -16,6 +16,7 @@ from scipy.signal import butter, filtfilt
 import tkinter as tk
 from tkinter import filedialog
 import sys
+from datetime import datetime
 
 import matplotlib
 matplotlib.use('Agg')
@@ -30,7 +31,7 @@ PLOT_HEIGHT = 800
 # Acquisition
 NSAMPLES = 16384
 TIMEBASE = 3 #
-NAVERAGES = 32
+NAVERAGES = 10
 
 # XYZ
 USTEPS_MM = 40 * 256
@@ -250,10 +251,11 @@ def handle_keys():
 
 # Show instructions
 instructions = [
-    "Use the keyboard to adjust start position:",
-    "Up/Down Arrows - Move X-axis ",
+    "Use keyboard to adjust start position:",
+    " "
+    "Up/Down Arrow - Move X-axis ",
     "Left/Right Arrow - Move Y-axis",
-    "A/Z Keys - Move Z-axis",
+    "A/Z Key - Move Z-axis",
     " ",
     "Press ENTER to continue"
 ]
@@ -468,7 +470,11 @@ def acq_data(fig_queue, stop_event, xyz, osc):
 
             n = n + 1
         
-        np.savez("data.npz", waveforms=waveforms, positions=positions)
+        now = datetime.now()
+        date_time = now.strftime("%y%m%d%H%M")
+        fname = "data_" + date_time + ".npz"
+        np.savez(fname, waveforms=waveforms, positions=positions)
+        print("Data acquisition done")
         return
 
 measuring = True
@@ -533,12 +539,15 @@ while measuring:
         screen.fill((0, 0, 0))
         screen.blit(surf, (0, 0))
         pygame.display.flip()
+        
+    if not acq_thread.is_alive():
+        break
 
 time.sleep(1)
 stop_event2.set()
 #xyz.goto_xyz_absolute(10 * usteps_mm, 10 * usteps_mm, 10 * usteps_mm)
 
-print("Scan done")
+print("Script done")
 #xyz.goto_home()
 
 acq_thread.join()
