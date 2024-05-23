@@ -27,7 +27,7 @@ class PathBuilder:
         iy = 0
         for z in self._frange(self.startZ, self.endZ + self.stepZ, self.stepZ):
             if iz % 2 == 0 :
-                for y in self._frange(self.startY, self.endY + self.stepY, self.stepY):
+                for y in self._frange(self.endY, self.startY - self.stepY, -self.stepY, False):
                     if iy % 2 == 0 :
                         for x in self._frange(self.startX, self.endX + self.stepX, self.stepX):
                             path.append((x, y, z))
@@ -36,7 +36,7 @@ class PathBuilder:
                             path.append((x, y, z))
                     iy = iy + 1
             else :
-                for y in self._frange(self.endY, self.startY - self.stepY, -self.stepY, False):
+                for y in self._frange(self.startY, self.endY + self.stepY, self.stepY):
                     if iy % 2 == 0 :
                         for x in self._frange(self.startX, self.endX + self.stepX, self.stepX):
                             path.append((x, y, z))
