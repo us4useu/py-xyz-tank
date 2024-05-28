@@ -17,6 +17,7 @@ import tkinter as tk
 from tkinter import filedialog
 import sys
 from datetime import datetime
+import re
 
 import matplotlib
 matplotlib.use('Agg')
@@ -50,29 +51,40 @@ def load_prototxt_file():
     # Check if a file was selected
     if file_path:
         try:
+            params = {}
             # Read the content of the file
             with open(file_path, 'r') as file:
-                content = file.readlines()
-                # Parse the parameters
-                params = {}
-                for line in content:
-                    key, value = line.strip().split(': ')
-                    params[key] = float(value)
+                 for line in file:
+                    line = line.strip()
+                    if ':' in line:
+                        # Split the line into key and value
+                        key, value = line.split(':', 1)
+                        key = key.strip()
+                        value = value.strip()
+                        
+                        # Handle float and string types
+                        if value.startswith('"') and value.endswith('"'):
+                            params[key] = value.strip('"')
+                        else:
+                            try:
+                                params[key] = float(value)
+                            except ValueError:
+                                params[key] = value
 
-                xp = params.get('x_pos_range')
-                xn = params.get('x_neg_range')
+            # Define the expected parameters
+            expected_params = [
+                'x_pos_range', 'x_neg_range',
+                'y_pos_range', 'y_neg_range',
+                'z_pos_range', 'z_neg_range',
+                'x_step', 'y_step', 'z_step',
+                'axis_priority'
+            ]
 
-                yp = params.get('y_pos_range')
-                yn = params.get('y_neg_range')
-
-                zp = params.get('z_pos_range')
-                zn = params.get('z_neg_range')
-
-                xs = params.get('x_step')
-                ys = params.get('y_step')
-                zs = params.get('z_step')
-
-                return xn, yn, zn, xp, yp, zp, xs, ys, zs
+            try:
+                return [params[param] for param in expected_params]
+            except KeyError as e:
+                raise ValueError(f"Required parameter {e} not found in the prototxt file")
+                
         except Exception as e:
             print(f"Error reading file: {e}")
     else:
@@ -318,8 +330,14 @@ def acq_data(fig_queue, stop_event, xyz, osc):
 
     # Determine measurement path
     posx, posy, posz = xyz.get_actual_pos_mm(USTEPS_MM)
-    xn, yn, zn, xp, yp, zp, xs, ys, zs = load_prototxt_file()
-    pb = PathBuilder(-xn, -yn, -zn, xp, yp, zp, xs, ys, zs)
+    xp, xn, yp, yn, zp, zn, xs, ys, zs, prio = load_prototxt_file()
+
+    spanX = (-xn, xp)
+    spanY = (-yn, yp)
+    spanZ = (-zn, zp)
+
+    pb = PathBuilder(spanX, spanY, spanZ, xs, ys, zs, priority=prio, Yup=False)
+
     path = pb.generate_path()
 
     print(path)
@@ -394,7 +412,7 @@ def acq_data(fig_queue, stop_event, xyz, osc):
         
             t_start = time.time()
 
-            cmaxSamples = osc.runBlockAcquisition(NAVERAGES)
+            osc.runBlockAcquisition(NAVERAGES)
             osc.waitDataReady()
             chA_data = osc.getData(NAVERAGES)#, adc2mVChBMax = osc.getData()
                 
