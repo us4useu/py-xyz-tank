@@ -111,7 +111,7 @@ class ScopePS5000a :
         self.status["trigger"] = ps.ps5000aSetSimpleTrigger(self.chandle, 1, source, threshold, 2, 0, 0)
         assert_pico_ok(self.status["trigger"])
 
-    def setAcquisition(self, samples, offset) :
+    def setAcquisition(self, samples, offset, timebase) :
         # Set number of pre and post trigger samples to be collected
         self.preTriggerSamples = offset 
         self.postTriggerSamples = samples - self.preTriggerSamples
@@ -121,7 +121,7 @@ class ScopePS5000a :
         # Warning: When using this example it may not be possible to access all Timebases as all channels are enabled by default when opening the scope.  
         # To access these Timebases, set any unused analogue channels to off.
         # handle = chandle
-        self.timebase = 3 # 1 = 2ns, 2 = 4ns, 3 = 8ns, 4 = 16ns, 5 = 32ns, 6 = 48ns, 7 = 64ns, 8 = 80ns
+        self.timebase = timebase # 1 = 2ns, 2 = 4ns, 3 = 8ns, 4 = 16ns, 5 = 32ns, 6 = 48ns, 7 = 64ns, 8 = 80ns
         # noSampzzzzzzzzzzzzzzzzzzzzzzzzzzles = maxSamples
         # pointer to timeIntervalNanoseconds = ctypes.byref(timeIntervalns)
         # pointer to maxSamples = ctypes.byref(returnedMaxSamples)
@@ -135,7 +135,19 @@ class ScopePS5000a :
 
         return self.cmaxSamples.value, timeIntervalns.value
 
-    def runBlockAcquisition(self) :
+    def runBlockAcquisition(self, segments = 1) :
+        # if segments > 1
+        if segments > 1:
+            # Handle = Chandle
+            # nSegments = 10
+            # nMaxSamples = ctypes.byref(cmaxSamples)
+            self.status["MemorySegments"] = ps.ps5000aMemorySegments(self.chandle, segments, ctypes.byref(self.cmaxSamples))
+            assert_pico_ok(self.status["MemorySegments"])
+
+            # sets number of captures
+            self.status["SetNoOfCaptures"] = ps.ps5000aSetNoOfCaptures(self.chandle, segments)
+            assert_pico_ok(self.status["SetNoOfCaptures"])
+
         # Run block capture
         # handle = chandle
         # number of pre-trigger samples = preTriggerSamples
@@ -156,38 +168,57 @@ class ScopePS5000a :
 
 
         # Create buffers ready for assigning pointers for data collection
-        self.bufferAMax = (ctypes.c_int16 * self.maxSamples)()
-        self.bufferAMin = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
-        self.bufferBMax = (ctypes.c_int16 * self.maxSamples)()
-        self.bufferBMin = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
+        self.bufferAMax = []
+        self.bufferAMin = []
+        self.bufferBMax = []
+        self.bufferBMin = []
 
-        # Set data buffer location for data collection from channel A
-        # handle = chandle
-        source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_A"]
-        # pointer to buffer max = ctypes.byref(bufferAMax)
-        # pointer to buffer min = ctypes.byref(bufferAMin)
-        # buffer length = maxSamples
-        # segment index = 0
-        # ratio mode = PS5000A_RATIO_MODE_NONE = 0
-        self.status["setDataBuffersA"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferAMax), ctypes.byref(self.bufferAMin), self.maxSamples, 0, 0)
-        assert_pico_ok(self.status["setDataBuffersA"])
+        for n in range(segments) :
 
-        # Set data buffer location for data collection from channel B
-        # handle = chandle
-        #source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
-        # pointer to buffer max = ctypes.byref(bufferBMax)
-        # pointer to buffer min = ctypes.byref(bufferBMin)
-        # buffer length = maxSamples
-        # segment index = 0
-        # ratio mode = PS5000A_RATIO_MODE_NONE = 0
-        #self.status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferBMax), ctypes.byref(self.bufferBMin), self.maxSamples, 0, 0)
-        #assert_pico_ok(self.status["setDataBuffersB"])
+            self.bufferAMax.append((ctypes.c_int16 * self.maxSamples)())
+            self.bufferAMin.append((ctypes.c_int16 * self.maxSamples)()) # used for downsampling which isn't in the scope of this example
+            #self.bufferBMax[n] = (ctypes.c_int16 * self.maxSamples)()
+            #self.bufferBMin[n] = (ctypes.c_int16 * self.maxSamples)() # used for downsampling which isn't in the scope of this example
 
-        # create overflow loaction
-        self.overflow = ctypes.c_int16()
-        # create converted type maxSamples
+            # Set data buffer location for data collection from channel A
+            # handle = chandle
+            source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_A"]
+            # pointer to buffer max = ctypes.byref(bufferAMax)
+            # pointer to buffer min = ctypes.byref(bufferAMin)
+            # buffer length = maxSamples
+            # segment index = 0
+            # ratio mode = PS5000A_RATIO_MODE_NONE = 0
+            self.status["setDataBuffersA"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferAMax[n]), ctypes.byref(self.bufferAMin[n]), self.maxSamples, n, 0)
+            assert_pico_ok(self.status["setDataBuffersA"])
 
-    def getData(self) :
+            # Set data buffer location for data collection from channel B
+            # handle = chandle
+            #source = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_B"]
+            # pointer to buffer max = ctypes.byref(bufferBMax)
+            # pointer to buffer min = ctypes.byref(bufferBMin)
+            # buffer length = maxSamples
+            # segment index = 0
+            # ratio mode = PS5000A_RATIO_MODE_NONE = 0
+            #self.status["setDataBuffersB"] = ps.ps5000aSetDataBuffers(self.chandle, source, ctypes.byref(self.bufferBMax), ctypes.byref(self.bufferBMin), self.maxSamples, n, 0)
+            #assert_pico_ok(self.status["setDataBuffersB"])
+
+            # create overflow loaction
+            self.overflow = ctypes.c_int16()
+            # create converted type maxSamples
+
+    def waitDataReady(self) :
+        # Checks data collection to finish the capture
+        ready = ctypes.c_int16(0)
+        check = ctypes.c_int16(0)
+
+        while ready.value == check.value:
+            self.status["isReady"] = ps.ps5000aIsReady(self.chandle, ctypes.byref(ready))
+
+    def getData(self, segments = 1) :
+
+        if segments > 1 :
+            self.status["GetValuesBulk"] = ps.ps5000aGetValuesBulk(self.chandle, ctypes.byref(self.cmaxSamples), 0, (segments-1), 0, 0, ctypes.byref(self.overflow))
+            assert_pico_ok(self.status["GetValuesBulk"])
         # Retried data from scope to buffers assigned above
         # handle = chandle
         # start index = 0
@@ -198,9 +229,13 @@ class ScopePS5000a :
         self.status["getValues"] = ps.ps5000aGetValues(self.chandle, 0, ctypes.byref(self.cmaxSamples), 0, 0, 0, ctypes.byref(self.overflow))
         assert_pico_ok(self.status["getValues"])
 
-        # convert ADC counts data to mV
-        adc2mVChAMax =  adc2mV(self.bufferAMax, self.chARange, self.maxADC)
-        #adc2mVChBMax =  adc2mV(self.bufferBMax, self.chBRange, self.maxADC)
+        adc2mVChAMax = []
+        adc2mVChBMax = []
+
+        for n in range(segments) :
+            # convert ADC counts data to mV
+            adc2mVChAMax.append(adc2mV(self.bufferAMax[n], self.chARange, self.maxADC))
+            #adc2mVChBMax.append(adc2mV(self.bufferBMax, self.chBRange, self.maxADC))
 
         return adc2mVChAMax#, adc2mVChBMax
     
