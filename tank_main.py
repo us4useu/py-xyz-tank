@@ -29,9 +29,9 @@ PLOT_WIDTH = 1600
 PLOT_HEIGHT = 800
 
 # Acquisition
-NSAMPLES = 16384
-TIMEBASE = 3 #
-NAVERAGES = 10
+NSAMPLES = 16384 # t = 25 * 8 = 200 us
+TIMEBASE = 3 # 8 ns
+NAVERAGES = 16
 
 # XYZ
 USTEPS_MM = 40 * 256
@@ -92,7 +92,7 @@ def scope_plot(fig_queue, stop_event, osc):
     osc.configChannelA()
     osc.configChannelB()
     osc.configTrigger()
-    cmaxSamples, timeIntervalns = osc.setAcquisition(32768, 256)
+    cmaxSamples, timeIntervalns = osc.setAcquisition(NSAMPLES, 256, timebase=TIMEBASE) # timebase 3 = 8ns
     times = np.linspace(0, (cmaxSamples - 1) * timeIntervalns, cmaxSamples)
 
     fig, ax = plt.subplots(figsize=(PLOT_WIDTH / 100, PLOT_HEIGHT / 100))
@@ -106,22 +106,17 @@ def scope_plot(fig_queue, stop_event, osc):
 
     while not stop_event.is_set():
 
-        list_set_A = []
-        list_set_B = []
-        for _ in range(NAVERAGES):
-            cmaxSamples = osc.runBlockAcquisition()
-            adc2mVChAMax = osc.getData()#, adc2mVChBMax = osc.getData()
-
-            adc2mVChAMax_filt = bandpass_filter(adc2mVChAMax, 600000, 1800000, 125000000)
+        osc.runBlockAcquisition(NAVERAGES)
+        osc.waitDataReady()
+        chA_data = osc.getData(NAVERAGES)#, adc2mVChBMax = osc.getData()
             
-            list_set_A.append(adc2mVChAMax_filt)
-            #list_set_B.append(adc2mVChBMax)
-            
-        chA_array = np.array(list_set_A)
-        average_list_A = np.mean(chA_array, axis=0)
-        averageA = average_list_A.tolist()
+        chA_array = np.array(chA_data)
+        chA_arrMean = np.mean(chA_array, axis=0)
+        chA_avgList = chA_arrMean.tolist()
 
-        chA.set_data(times, averageA)
+        chA_filtered = bandpass_filter(chA_avgList, 600000, 1800000, 125000000)
+
+        chA.set_data(times, chA_filtered)
         #chA.set_data(times, [x/1000 for x in adc2mVChBMax])
 
         canvas = agg.FigureCanvasAgg(fig)
@@ -134,42 +129,9 @@ def scope_plot(fig_queue, stop_event, osc):
 
         if fig_queue.empty():
             fig_queue.put(surf)
-
-def xyz_plot3d(fig3d_queue, position_queue):
-
-    while True:
-        if not position_queue.empty():
-            print("got position data")
-            pos = position_queue.get()
-            x = pos[0]
-            y = pos[1]
-            z = pos[2]
-
-            fig = plt.figure(figsize=(PLOT_WIDTH / 100, PLOT_HEIGHT / 100))
-            ax = fig.add_subplot(111, projection='3d')
-
-            # Plot the single point
-            ax.scatter([x], [y], [z], c='r', marker='o')
-
-            # Draw dashed lines to the planes
-            ax.plot([x, x], [y, y], [0, z], color='gray', linestyle='--', alpha=0.5)
-            ax.plot([x, x], [0, y], [z, z], color='gray', linestyle='--', alpha=0.5)
-            ax.plot([0, x], [y, y], [z, z], color='gray', linestyle='--', alpha=0.5)
-
-            max_range = 500
-
-            ax.set_xlabel('X Axis')
-            ax.set_ylabel('Y Axis')
-            ax.set_zlabel('Z Axis')
-            
-            # Flip the axes
-            ax.set_xlim(max_range, 0)
-            ax.set_ylim(max_range, 0)
-            ax.set_zlim(max_range, 0)
-            if fig3d_queue.empty():
-                fig3d_queue.put(fig)
-        pass
-
+    
+    if stop_event.is_set():
+        print("positioning stop event")
 
 pygame.init()
 
@@ -291,12 +253,6 @@ stop_event = threading.Event()
 scope_thread = threading.Thread(target=scope_plot, args=(fig_queue, stop_event, osc))
 scope_thread.daemon = True  # Daemonize the thread so it will exit when the main thread exits
 scope_thread.start()  # Start the data generation thread
-
-fig3d_queue = queue.Queue()  # Queue for passing data between threads
-position_queue = queue.Queue()
-pos3d_thread = threading.Thread(target=xyz_plot3d, args=(fig3d_queue, position_queue,))
-pos3d_thread.daemon = True  # Daemonize the thread so it will exit when the main thread exits
-#pos3d_thread.start()  # Start the data generation thread
 
 positioning = True
 frame = 0
@@ -436,23 +392,17 @@ def acq_data(fig_queue, stop_event, xyz, osc):
                 str_time = "Elapsed time: " + " ".join(elapsed_str) + ", estimated end in: " + " ".join(end_str)
                 #print(str_time)
         
-            #time.sleep(0.1)
-
             t_start = time.time()
-            list_set_A = []
-            list_set_B = []
-            for _ in range(NAVERAGES):
-                osc.runBlockAcquisition()
-                adc2mVChAMax = osc.getData()#, adc2mVChBMax = osc.getData()
 
-                adc2mVChAMax_filt = bandpass_filter(adc2mVChAMax, 600000, 1800000, 125000000)
+            cmaxSamples = osc.runBlockAcquisition(NAVERAGES)
+            osc.waitDataReady()
+            chA_data = osc.getData(NAVERAGES)#, adc2mVChBMax = osc.getData()
                 
-                list_set_A.append(adc2mVChAMax_filt)
-                #list_set_B.append(adc2mVChBMax)
-                
-            chA_array = np.array(list_set_A)
-            average_list_A = np.mean(chA_array, axis=0)
-            averageA = average_list_A.tolist()
+            chA_array = np.array(chA_data)
+            chA_arrMean = np.mean(chA_array, axis=0)
+            chA_avgList = chA_arrMean.tolist()
+
+            chA_filtered = bandpass_filter(chA_avgList, 600000, 1800000, 125000000)
 
             t_end = time.time()
             t = t_end - t_start
@@ -460,10 +410,10 @@ def acq_data(fig_queue, stop_event, xyz, osc):
 
             position = path[n]
 
-            waveforms.append(averageA)
+            waveforms.append(chA_filtered)
             positions.append(position)
 
-            data = averageA, str_time, str_pos
+            data = chA_filtered, str_time, str_pos
 
             if fig_queue.empty():
                 fig_queue.put(data)
@@ -489,7 +439,7 @@ print("Starting measurement")
 osc.configChannelA()
 osc.configChannelB()
 osc.configTrigger()
-cmaxSamples, timeIntervalns = osc.setAcquisition(32768, 256)
+cmaxSamples, timeIntervalns = osc.setAcquisition(NSAMPLES, 256, timebase = TIMEBASE)
 times = np.linspace(0, (cmaxSamples - 1) * timeIntervalns, cmaxSamples)
 
 fig, ax = plt.subplots(figsize=(PLOT_WIDTH / 100, PLOT_HEIGHT / 100))
