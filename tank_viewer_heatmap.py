@@ -2,26 +2,39 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import binned_statistic_2d
+import tkinter as tk
+from tkinter import filedialog
 
 HYDROPHONE_DIST = 15.0
 NOISE_OFFSET = 1600
 
-def load_npz_file(filepath, key):
-    npzfile = np.load(filepath)
-    if key in npzfile:
-        return npzfile[key]
+def load_npz_file(key1, key2):
+    root = tk.Tk()
+    root.withdraw()
+
+    # Open file dialog and return the selected file path
+    file_path = filedialog.askopenfilename(
+        title="Select .npz tank data file",
+        filetypes=(("Numpy .npz files", "*.npz"), ("All files", "*.*"))
+    )
+
+    # Check if a file was selected
+    if file_path:
+        try:
+            npzfile = np.load(file_path)
+            if key1 in npzfile and key2 in npzfile:
+                return npzfile[key1], npzfile[key2]
+            else:
+                raise KeyError(f"Data not found in the .npz file.")
+        except Exception as e:
+            print(f"Error reading file: {e}")
     else:
-        raise KeyError(f"The key '{key}' was not found in the .npz file.")
+        print("No file selected")
+
 
 def main():
-    import argparse
-    parser = argparse.ArgumentParser(description="Plot heatmap from tank NPZ data file.")
-    parser.add_argument("filename", type=str, help="Path to the NPZ file")
-    args = parser.parse_args()
-
     try:
-        waveforms = load_npz_file(args.filename, "waveforms")
-        coordinates =  load_npz_file(args.filename, "positions")
+        waveforms, coordinates = load_npz_file("waveforms", "positions")
     except KeyError as e:
         print(e)
         return
