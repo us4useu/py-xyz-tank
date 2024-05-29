@@ -1,122 +1,83 @@
-import pygame
-import sys
+from xyz_motor.path_builder import PathBuilder
 import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.animation as animation
+import numpy as np 
 
-import matplotlib
-matplotlib.use('Agg')
+def plot_path(path):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    x_vals = [x for x, _, _ in path]
+    y_vals = [y for _, y, _ in path]
+    z_vals = [z for _, _, z in path]
 
-# Initialize Pygame
-pygame.init()
+    ax.plot(x_vals, y_vals, z_vals, color='green', marker='o', linestyle='-')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title('3D Path')
 
-# Constants
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 800
-MAIN_PLOT_WIDTH = 800
-MAIN_PLOT_HEIGHT = 800
+    plt.show()
 
-# Create the window
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-pygame.display.set_caption("3D Position Plot Example")
-
-def draw_figure(canvas, rect):
-    """Draw a matplotlib figure on a pygame surface."""
-    canvas.draw()
-    renderer = canvas.get_renderer()
-    raw_data = renderer.buffer_rgba().tobytes()  # Convert memoryview to bytes
-    size = canvas.get_width_height()
-
-    # Convert raw_data to a pygame image
-    surf = pygame.image.fromstring(raw_data, size, "RGBA")
-    return surf
-
-def create_3d_plot():
-    fig = plt.figure(figsize=(MAIN_PLOT_WIDTH / 100, MAIN_PLOT_HEIGHT / 100))
+def animate_path(path, interval):
+    fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    # Plot the single point
-    point = ax.scatter([], [], [], c='r', marker='o')
+    x_vals = [x for x, _, _ in path]
+    y_vals = [y for _, y, _ in path]
+    z_vals = [z for _, _, z in path]
 
-    # Draw dashed lines to the planes
-    ax.plot([], [], [], color='gray', linestyle='--', alpha=0.5)
-    ax.plot([], [], [], color='gray', linestyle='--', alpha=0.5)
-    ax.plot([], [], [], color='gray', linestyle='--', alpha=0.5)
+    # Initial plot
+    scat = ax.scatter(x_vals, y_vals, z_vals, color=(1, 1, 1, 0))
+    line, = ax.plot([], [], [], color='green')
 
-    # Draw transparent planes
-    max_range = 500
-    xx, yy = np.meshgrid([0, max_range], [0, max_range])
-    ax.plot_surface(xx, yy, np.zeros_like(xx), color='gray', alpha=0.1)
-    ax.plot_surface(xx, np.zeros_like(yy), yy, color='gray', alpha=0.1)
-    ax.plot_surface(np.zeros_like(xx), xx, yy, color='gray', alpha=0.1)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title('3D Path Animation')
 
-    ax.set_xlabel('X Axis')
-    ax.set_ylabel('Y Axis')
-    ax.set_zlabel('Z Axis')
-    
-    # Flip the axes
-    ax.set_xlim(max_range, 0)
-    ax.set_ylim(max_range, 0)
-    ax.set_zlim(max_range, 0)
+    x_limits = ax.get_xlim3d()
+    y_limits = ax.get_ylim3d()
+    z_limits = ax.get_zlim3d()
 
-    return fig, ax, point
+    x_range = abs(x_limits[1] - x_limits[0])
+    y_range = abs(y_limits[1] - y_limits[0])
+    z_range = abs(z_limits[1] - z_limits[0])
 
-# Pre-create the 3D plot
-fig, ax, point = create_3d_plot()
+    x_middle = np.mean(x_limits)
+    y_middle = np.mean(y_limits)
+    z_middle = np.mean(z_limits)
 
-# Initial data
-x_data = np.random.rand(100) * 500
-y_data = np.random.rand(100) * 500
-z_data = np.random.rand(100) * 500
+    plot_radius = 0.5 * max([x_range, y_range, z_range])
 
-def update(frame):
-    """Update function for FuncAnimation."""
-    global x_data, y_data, z_data
+    ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
+    ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
+    ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
 
-    # Update data
-    x_data = np.random.rand(100) * 500
-    y_data = np.random.rand(100) * 500
-    z_data = np.random.rand(100) * 500
+    def update(frame):
+        # Update the colors of the points
+        colors = ['green' if i == frame else (1, 1, 1, 0) for i in range(len(path))]
+        scat.set_color(colors)
+        line.set_data(x_vals[:frame+1], y_vals[:frame+1])
+        line.set_3d_properties(z_vals[:frame+1])
+        return scat, line
 
-    # Update the plot
-    point._offsets3d = (x_data, y_data, z_data)
+    ani = animation.FuncAnimation(fig, update, frames=len(path), interval=interval, blit=True)
+    plt.show()
 
-    # Redraw the canvas
-    canvas = FigureCanvas(fig)
-    plot_surf = draw_figure(canvas, (0, 0, MAIN_PLOT_WIDTH, MAIN_PLOT_HEIGHT))
-    plt.close(fig)
+pb = PathBuilder((-2,2), (-2,2), (0,0), 1, 1, 1, priority="zyx", Yup=False)
+path = pb.generate_path()
+print(len(path))
 
-    return plot_surf
+n = len(path)
 
-# Main loop
-running = True
-clock = pygame.time.Clock()
-frame = 0
+if n < 1:
+    n = 1
 
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+#draw in 10 seconds
+interval = int(10000/n)
 
-    # Update animation
-    plot_surf = update(frame)
+if interval < 1:
+    interval = 1
 
-    # Clear the screen
-    screen.fill((255, 255, 255))
-
-    # Blit the plot onto the screen
-    screen.blit(plot_surf, (0, 0))
-
-    # Update frame
-    frame += 1
-    if frame >= len(x_data):
-        frame = 0
-
-    # Update the display
-    pygame.display.flip()
-    #clock.tick(30)
-
-# Quit Pygame
-pygame.quit()
-sys.exit()
+animate_path(path, interval)
