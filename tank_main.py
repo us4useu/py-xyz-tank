@@ -32,7 +32,7 @@ PLOT_HEIGHT = 800
 # Acquisition
 NSAMPLES = 16384 # t = 25 * 8 = 200 us
 TIMEBASE = 3 # 8 ns
-NAVERAGES = 16
+NAVERAGES = 20
 
 # XYZ
 USTEPS_MM = 40 * 256
