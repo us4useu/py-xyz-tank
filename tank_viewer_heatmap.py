@@ -15,7 +15,7 @@ def load_npz_file(filepath, key):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Plot arrays from an NPZ file with navigation.")
+    parser = argparse.ArgumentParser(description="Plot heatmap from tank NPZ data file.")
     parser.add_argument("filename", type=str, help="Path to the NPZ file")
     args = parser.parse_args()
 
