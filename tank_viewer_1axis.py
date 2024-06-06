@@ -44,14 +44,7 @@ def main():
 
     amplitudes = np.ptp(waveforms, axis=1) * 0.013 # in MPa
 
-    x = coordinates[:, 0]
-    y = coordinates[:, 1] - HYDROPHONE_DIST
-    z = coordinates[:, 2]
 
-    num_x_bins = len(np.unique(x))
-    num_y_bins = len(np.unique(y))
-
-    statistic, x_edge, y_edge, binnumber = binned_statistic_2d(x, y, amplitudes, statistic='mean', bins=[num_x_bins, num_y_bins])
 
     #cmap = "jet"
 
@@ -61,11 +54,9 @@ def main():
     cmap = "jet"
 
     plt.figure(figsize=(10, 8))
-    ax = sns.heatmap(statistic.T, xticklabels=np.round(np.unique(x), 0), yticklabels=np.round(np.unique(y), 0), cmap=cmap, cbar_kws={'label': 'Pressure [MPa]'}, square=True)
-    ax.set_aspect('equal', 'box')
-    ax.set_aspect('equal', 'box')
-    plt.xlabel('X (mm)')
-    plt.ylabel('Y (mm)')
+    plt.plot(amplitudes)
+    plt.xlabel('Dist (mm)')
+    plt.ylabel('Amplitude')
     plt.show()
 
 if __name__ == "__main__":
