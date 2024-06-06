@@ -55,8 +55,10 @@ def main():
 
     #cmap = "jet"
 
-    jet_colors = plt.cm.jet(np.linspace(0, 1, 10))
-    cmap = ListedColormap(jet_colors)
+    #jet_colors = plt.cm.jet(np.linspace(0, 1, 10))
+    #cmap = ListedColormap(jet_colors)
+
+    cmap = "jet"
 
     plt.figure(figsize=(10, 8))
     ax = sns.heatmap(statistic.T, xticklabels=np.round(np.unique(x), 0), yticklabels=np.round(np.unique(y), 0), cmap=cmap, cbar_kws={'label': 'Pressure [MPa]'}, square=True)
