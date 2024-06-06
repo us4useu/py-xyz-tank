@@ -349,6 +349,10 @@ def acq_data(fig_queue, stop_event, xyz, osc):
     y = [int(USTEPS_MM * (t[1] + posy)) for t in path]
     z = [int(USTEPS_MM * (t[2] + posz)) for t in path]
 
+    start_x = int(USTEPS_MM * posx)
+    start_y = int(USTEPS_MM * posy)
+    start_z = int(USTEPS_MM * posz)
+
     pos_mm = xyz.get_actual_pos_mm(USTEPS_MM)
     str_pos = "Position [mm]: [" + "{:.2f}".format(pos_mm[0]) + ", " + "{:.2f}".format(pos_mm[1]) + ", " + "{:.2f}".format(pos_mm[2]) + "]"
 
@@ -443,6 +447,9 @@ def acq_data(fig_queue, stop_event, xyz, osc):
         fname = "data_" + date_time + ".npz"
         np.savez(fname, waveforms=waveforms, positions=positions)
         print("Data acquisition done")
+
+        xyz.goto_xyz_absolute(start_x, start_y, start_z, True)
+
         return
 
 measuring = True
