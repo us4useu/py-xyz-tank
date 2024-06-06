@@ -44,7 +44,20 @@ def main():
 
     amplitudes = np.ptp(waveforms, axis=1) * 0.013 # in MPa
 
+    x = coordinates[:, 0]
+    y = coordinates[:, 1] - HYDROPHONE_DIST
+    z = coordinates[:, 2]
 
+    num_x_bins = len(np.unique(x))
+    num_y_bins = len(np.unique(y))
+    num_z_bins = len(np.unique(z))
+
+    if(num_x_bins == len(amplitudes)):
+        x_axis = np.unique(x)
+    elif(num_y_bins == len(amplitudes)):
+        x_axis = np.unique(y)
+    elif(num_z_bins == len(amplitudes)):
+        x_axis = np.unique(z)
 
     #cmap = "jet"
 
@@ -54,7 +67,7 @@ def main():
     cmap = "jet"
 
     plt.figure(figsize=(10, 8))
-    plt.plot(amplitudes)
+    plt.plot(x_axis, amplitudes)
     plt.xlabel('Dist (mm)')
     plt.ylabel('Amplitude')
     plt.show()
