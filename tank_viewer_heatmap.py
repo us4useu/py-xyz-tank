@@ -5,6 +5,7 @@ from scipy.stats import binned_statistic_2d
 from matplotlib.colors import ListedColormap, BoundaryNorm
 import tkinter as tk
 from tkinter import filedialog
+import pandas as pd
 
 HYDROPHONE_DIST = 15.0
 NOISE_OFFSET = 1600
@@ -45,11 +46,12 @@ def main():
     amplitudes = np.ptp(waveforms, axis=1) * 0.013 # in MPa
 
     x = coordinates[:, 0]
-    y = coordinates[:, 1] - HYDROPHONE_DIST
-    z = coordinates[:, 2]
+    y = coordinates[:, 2]
+    z = coordinates[:, 1]
 
     num_x_bins = len(np.unique(x))
     num_y_bins = len(np.unique(y))
+    num_z_bins = len(np.unique(z))
 
     statistic, x_edge, y_edge, binnumber = binned_statistic_2d(x, y, amplitudes, statistic='mean', bins=[num_x_bins, num_y_bins])
 
@@ -67,6 +69,19 @@ def main():
     plt.xlabel('X (mm)')
     plt.ylabel('Y (mm)')
     plt.show()
+
+    statistic_df = pd.DataFrame(statistic.T)
+
+    # Define x and y labels
+    x_labels = (x_edge[:-1] + x_edge[1:]) / 2
+    y_labels = (y_edge[:-1] + y_edge[1:]) / 2
+
+    # Set the x and y labels as the DataFrame index and columns
+    statistic_df.columns = np.round(x_labels, 2)
+    statistic_df.index = np.round(y_labels, 2)
+
+    # Save to CSV
+    statistic_df.to_csv('binned_statistic.csv')
 
 if __name__ == "__main__":
     main()
