@@ -18,6 +18,9 @@ from tkinter import filedialog
 import sys
 from datetime import datetime
 import re
+import faulthandler
+
+faulthandler.enable()
 
 import matplotlib
 matplotlib.use('Agg')
@@ -102,7 +105,7 @@ def bandpass_filter(data, lowcut, highcut, fs, order=5):
 
 def scope_plot(fig_queue, stop_event, osc):
     osc.configChannelA()
-    osc.configChannelB()
+    osc.configChannelB(enabled=False)
     osc.configTrigger()
     cmaxSamples, timeIntervalns = osc.setAcquisition(NSAMPLES, 256, timebase=TIMEBASE) # timebase 3 = 8ns
     times = np.linspace(0, (cmaxSamples - 1) * timeIntervalns, cmaxSamples)
