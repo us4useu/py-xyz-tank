@@ -6,8 +6,8 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 import tkinter as tk
 from tkinter import filedialog
 
-HYDROPHONE_DIST = 15.0
-NOISE_OFFSET = 1600
+HYDROPHONE_DIST = -10.0
+NOISE_OFFSET = 850
 
 def load_npz_file(key1, key2):
     root = tk.Tk()
@@ -69,7 +69,7 @@ def main():
     plt.figure(figsize=(10, 8))
     plt.plot(x_axis, amplitudes)
     plt.xlabel('Dist (mm)')
-    plt.ylabel('Amplitude')
+    plt.ylabel('Pressure [MPa]')
     plt.show()
 
 if __name__ == "__main__":

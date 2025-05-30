@@ -21,7 +21,7 @@ class PlotNavigator:
     def show_plot(self):
         self.ax.clear()
         self.ax.plot(self.data[self.index])
-        self.ax.set_ylim(-10.0, 10.0)
+        self.ax.set_ylim(-2000.0, 2000.0)
         self.ax.set_title(f'Plot {self.index + 1}')
         self.fig.canvas.draw()
 

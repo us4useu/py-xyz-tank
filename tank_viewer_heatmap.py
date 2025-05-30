@@ -6,8 +6,8 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 import tkinter as tk
 from tkinter import filedialog
 
-HYDROPHONE_DIST = 15.0
-NOISE_OFFSET = 1600
+HYDROPHONE_DIST = 0.00
+NOISE_OFFSET = 850
 
 def load_npz_file(key1, key2):
     root = tk.Tk()
@@ -44,14 +44,15 @@ def main():
 
     amplitudes = np.ptp(waveforms, axis=1) * 0.013 # in MPa
 
-    x = coordinates[:, 0]
-    y = coordinates[:, 1] - HYDROPHONE_DIST
-    z = coordinates[:, 2]
+    x = 1 * coordinates[:, 0]
+    y = 1 * coordinates[:, 1]
+    z = 1 * coordinates[:, 2]
 
     num_x_bins = len(np.unique(x))
     num_y_bins = len(np.unique(y))
+    num_z_bins = len(np.unique(z))
 
-    statistic, x_edge, y_edge, binnumber = binned_statistic_2d(x, y, amplitudes, statistic='mean', bins=[num_x_bins, num_y_bins])
+    statistic, x_edge, y_edge, binnumber = binned_statistic_2d(y, z, amplitudes, statistic='mean', bins=[num_y_bins, num_z_bins])
 
     #cmap = "jet"
 
@@ -61,11 +62,11 @@ def main():
     cmap = "jet"
 
     plt.figure(figsize=(10, 8))
-    ax = sns.heatmap(statistic.T, xticklabels=np.round(np.unique(x), 0), yticklabels=np.round(np.unique(y), 0), cmap=cmap, cbar_kws={'label': 'Pressure [MPa]'}, square=True)
+    ax = sns.heatmap(statistic.T, xticklabels=np.round(np.unique(y), 2), yticklabels=np.round(np.unique(z), 2), cmap=cmap, cbar_kws={'label': 'Pressure [MPa]'}, square=True)
     ax.set_aspect('equal', 'box')
     ax.set_aspect('equal', 'box')
-    plt.xlabel('X (mm)')
-    plt.ylabel('Y (mm)')
+    plt.xlabel('Y (mm)')
+    plt.ylabel('Z (mm)')
     plt.show()
 
 if __name__ == "__main__":

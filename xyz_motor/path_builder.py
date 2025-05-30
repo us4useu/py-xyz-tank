@@ -152,6 +152,7 @@ class PathBuilder:
                             z = pos2/1e6
 
                     elif self.priority[0] == 'z' :
+                        z = pos1/1e6
                         if self.priority[1] == 'x' :
                             x = pos2/1e6
                             y = pos3/1e6

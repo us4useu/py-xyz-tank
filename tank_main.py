@@ -30,9 +30,9 @@ PLOT_WIDTH = 1600
 PLOT_HEIGHT = 800
 
 # Acquisition
-NSAMPLES = 16384 # t = 25 * 8 = 200 us
+NSAMPLES = 4096 # t = 25 * 8 = 200 us
 TIMEBASE = 3 # 8 ns
-NAVERAGES = 20
+NAVERAGES = 10
 
 # XYZ
 USTEPS_MM = 40 * 256
@@ -110,7 +110,7 @@ def scope_plot(fig_queue, stop_event, osc):
     fig, ax = plt.subplots(figsize=(PLOT_WIDTH / 100, PLOT_HEIGHT / 100))
     chA, = ax.plot([], [], label='Channel A')
     chB, = ax.plot([], [], label='Channel B')
-    ax.set_ylim(-20, 20)
+    ax.set_ylim(-1000, 1000)
     ax.set_xlim(0, times[len(times)-1])
     ax.set_xlabel('Time [ns]')
     ax.set_ylabel('Amplitude [v, mV]')
@@ -126,7 +126,7 @@ def scope_plot(fig_queue, stop_event, osc):
         chA_arrMean = np.mean(chA_array, axis=0)
         chA_avgList = chA_arrMean.tolist()
 
-        chA_filtered = bandpass_filter(chA_avgList, 600000, 1800000, 125000000)
+        chA_filtered = bandpass_filter(chA_avgList, 10000000, 20000000, 125000000)
 
         chA.set_data(times, chA_filtered)
         #chA.set_data(times, [x/1000 for x in adc2mVChBMax])
@@ -424,7 +424,7 @@ def acq_data(fig_queue, stop_event, xyz, osc):
             chA_arrMean = np.mean(chA_array, axis=0)
             chA_avgList = chA_arrMean.tolist()
 
-            chA_filtered = bandpass_filter(chA_avgList, 600000, 1800000, 125000000)
+            chA_filtered = bandpass_filter(chA_avgList, 10000000, 20000000, 125000000)
 
             t_end = time.time()
             t = t_end - t_start
@@ -467,10 +467,12 @@ osc.configTrigger()
 cmaxSamples, timeIntervalns = osc.setAcquisition(NSAMPLES, 256, timebase = TIMEBASE)
 times = np.linspace(0, (cmaxSamples - 1) * timeIntervalns, cmaxSamples)
 
+print("Osc acq set")
+
 fig, ax = plt.subplots(figsize=(PLOT_WIDTH / 100, PLOT_HEIGHT / 100))
 chA, = ax.plot([], [], label='Channel A')
 chB, = ax.plot([], [], label='Channel B')
-ax.set_ylim(-20, 20)
+ax.set_ylim(-1000, 1000)
 ax.set_xlim(0, times[len(times)-1])
 ax.set_xlabel('Time [ns]xxx')
 ax.set_ylabel('Amplitude [V, mV]')
@@ -480,6 +482,8 @@ stop_event2 = threading.Event()
 acq_thread = threading.Thread(target=acq_data, args=(fig_queue, stop_event2, xyz, osc))
 acq_thread.daemon = True  # Daemonize the thread so it will exit when the main thread exits
 acq_thread.start()  # Start the data generation thread
+
+print("Acq thread started")
 
 while measuring:
     for event in pygame.event.get():
