@@ -170,8 +170,8 @@ class ScopePS5000a :
         # Create buffers ready for assigning pointers for data collection
         self.bufferAMax = []
         self.bufferAMin = []
-        self.bufferBMax = []
-        self.bufferBMin = []
+        #self.bufferBMax = []
+        #self.bufferBMin = []
 
         for n in range(segments) :
 
@@ -230,7 +230,7 @@ class ScopePS5000a :
         assert_pico_ok(self.status["getValues"])
 
         adc2mVChAMax = []
-        adc2mVChBMax = []
+        #adc2mVChBMax = []
 
         for n in range(segments) :
             # convert ADC counts data to mV

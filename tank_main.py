@@ -18,6 +18,11 @@ from tkinter import filedialog
 import sys
 from datetime import datetime
 import re
+import faulthandler
+import glob
+import os
+
+faulthandler.enable()
 
 import matplotlib
 matplotlib.use('Agg')
@@ -37,6 +42,7 @@ NAVERAGES = 10
 # XYZ
 USTEPS_MM = 40 * 256
 
+#Function to read scan path definition from prototxt file
 def load_prototxt_file():
     # Create a root window and hide it
     root = tk.Tk()
@@ -90,7 +96,25 @@ def load_prototxt_file():
     else:
         print("No file selected")
 
+def save_waveform_to_file(data):
+    save_dir = './' 
+    existing_files = glob.glob(os.path.join(save_dir, 'data_*.npy'))
 
+    indices = []
+    for file in existing_files:
+        try:
+            idx = int(os.path.splitext(os.path.basename(file))[0].split('_')[1])
+            indices.append(idx)
+        except (IndexError, ValueError):
+            continue
+
+    next_idx = max(indices) + 1 if indices else 0
+
+    fname = os.path.join(save_dir, f'data_{next_idx}.npy')
+
+    np.save(fname, data)
+
+    print(f'Data saved to {fname}')
 
 def bandpass_filter(data, lowcut, highcut, fs, order=5):
     nyquist = 0.5 * fs
@@ -102,7 +126,7 @@ def bandpass_filter(data, lowcut, highcut, fs, order=5):
 
 def scope_plot(fig_queue, stop_event, osc):
     osc.configChannelA()
-    osc.configChannelB()
+    osc.configChannelB(enabled=False)
     osc.configTrigger()
     cmaxSamples, timeIntervalns = osc.setAcquisition(NSAMPLES, 256, timebase=TIMEBASE) # timebase 3 = 8ns
     times = np.linspace(0, (cmaxSamples - 1) * timeIntervalns, cmaxSamples)
@@ -129,6 +153,9 @@ def scope_plot(fig_queue, stop_event, osc):
         chA_filtered = bandpass_filter(chA_avgList, 10000000, 20000000, 125000000)
 
         chA.set_data(times, chA_filtered)
+
+        if capture_event.is_set():
+            save_waveform_to_file(chA_filtered)
         #chA.set_data(times, [x/1000 for x in adc2mVChBMax])
 
         canvas = agg.FigureCanvasAgg(fig)
@@ -223,6 +250,13 @@ def handle_keys():
     else:
         velocity[2] = 0
 
+    if keys[pygame.K_c]:
+        capture = True
+    else:
+        capture = False
+
+    return capture
+
 # Show instructions
 instructions = [
     "Use keyboard to adjust start position:",
@@ -262,6 +296,7 @@ osc = scope()
 # Prepare thread queues
 fig_queue = queue.Queue()  # Queue for passing data between threads
 stop_event = threading.Event()
+capture_event = threading.Event()
 scope_thread = threading.Thread(target=scope_plot, args=(fig_queue, stop_event, osc))
 scope_thread.daemon = True  # Daemonize the thread so it will exit when the main thread exits
 scope_thread.start()  # Start the data generation thread
@@ -287,7 +322,9 @@ while positioning:
             if event.key == K_RETURN:
                 positioning = False
 
-    handle_keys()
+    capture = handle_keys()
+    if(capture == True):
+        capture_event.set()
 
     start = time.time()
 
