@@ -35,6 +35,15 @@ def load_npz_file(key1, key2):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Plot heatmap from arrays from an NPZ file.")
+    parser.add_argument("axes", type=str, help="Select axes to draw: xy, xz or yz")
+    args = parser.parse_args()
+
+    if args.axes != "xy" and args.axes != "xz" and args.axes != "yz":
+        print("Invalid axes " + args.axes)
+        return
+
     try:
         waveforms, coordinates = load_npz_file("waveforms", "positions")
     except KeyError as e:
@@ -49,12 +58,28 @@ def main():
     y = 1 * coordinates[:, 1]
     z = 1 * coordinates[:, 2]
 
-    num_x_bins = len(np.unique(x))
-    num_y_bins = len(np.unique(y))
-    num_z_bins = len(np.unique(z))
+    if(args.axes == "xy"):
+        a = x
+        b = y
+    
+    if(args.axes == "xz"):
+        a = x
+        b = z
 
-    statistic, x_edge, y_edge, binnumber = binned_statistic_2d(y, z, amplitudes, statistic='mean', bins=[num_y_bins, num_z_bins])
+    if(args.axes == "yz"):
+        a = y
+        b = z
 
+    #num_x_bins = len(np.unique(x))
+    #num_y_bins = len(np.unique(y))
+    #num_z_bins = len(np.unique(z))
+
+    num_a_bins = len(np.unique(a))
+    num_b_bins = len(np.unique(b))
+
+    #statistic, x_edge, y_edge, binnumber = binned_statistic_2d(y, z, amplitudes, statistic='mean', bins=[num_y_bins, num_z_bins])
+    statistic, a_edge, b_edge, binnumber = binned_statistic_2d(a, b, amplitudes, statistic='mean', bins=[num_a_bins, num_b_bins])
+    
     #cmap = "jet"
 
     #jet_colors = plt.cm.jet(np.linspace(0, 1, 10))
@@ -62,8 +87,10 @@ def main():
 
     cmap = "jet"
 
+
+
     plt.figure(figsize=(10, 8))
-    ax = sns.heatmap(statistic.T, xticklabels=np.round(np.unique(y), 2), yticklabels=np.round(np.unique(z), 2), cmap=cmap, cbar_kws={'label': 'Pressure [MPa]'}, square=True)
+    ax = sns.heatmap(statistic.T, xticklabels=np.round(np.unique(a), 2), yticklabels=np.round(np.unique(b), 2), cmap=cmap, cbar_kws={'label': 'Pressure [MPa]'}, square=True)
     ax.set_aspect('equal', 'box')
     ax.set_aspect('equal', 'box')
     plt.xlabel('Y (mm)')
@@ -73,15 +100,15 @@ def main():
     statistic_df = pd.DataFrame(statistic.T)
 
     # Define x and y labels
-    x_labels = (x_edge[:-1] + x_edge[1:]) / 2
-    y_labels = (y_edge[:-1] + y_edge[1:]) / 2
+    a_labels = (a_edge[:-1] + a_edge[1:]) / 2
+    b_labels = (b_edge[:-1] + b_edge[1:]) / 2
 
     # Set the x and y labels as the DataFrame index and columns
-    statistic_df.columns = np.round(x_labels, 2)
-    statistic_df.index = np.round(y_labels, 2)
+    statistic_df.columns = np.round(a_labels, 2)
+    statistic_df.index = np.round(b_labels, 2)
 
     # Save to CSV
-    statistic_df.to_csv('binned_statistic.csv')
+    #statistic_df.to_csv('binned_statistic.csv')
 
 if __name__ == "__main__":
     main()

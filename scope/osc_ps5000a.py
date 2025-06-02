@@ -52,7 +52,7 @@ class ScopePS5000a :
         channel = ps.PS5000A_CHANNEL["PS5000A_CHANNEL_A"]
         # enabled = 1
         coupling_type = ps.PS5000A_COUPLING["PS5000A_DC"]
-        self.chARange = ps.PS5000A_RANGE["PS5000A_2V"]
+        self.chARange = ps.PS5000A_RANGE["PS5000A_500mV"]
         # analogue offset = 0 V
         self.status["setChA"] = ps.ps5000aSetChannel(self.chandle, channel, enabled, coupling_type, self.chARange, 0)
         assert_pico_ok(self.status["setChA"])

@@ -214,8 +214,9 @@ while waiting_for_input:
 if home:
     xyz.goto_home()
     time.sleep(1)
-    xyz.zero_absolute_pos()
-    time.sleep(1)
+
+xyz.zero_absolute_pos()
+time.sleep(1)
 
 velocity = [0, 0, 0]
 
