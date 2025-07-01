@@ -37,7 +37,7 @@ PLOT_HEIGHT = 800
 # Acquisition
 NSAMPLES = 4096 # t = 25 * 8 = 200 us
 TIMEBASE = 3 # 8 ns
-NAVERAGES = 10
+NAVERAGES = 20
 
 # XYZ
 USTEPS_MM = 40 * 256
@@ -150,7 +150,7 @@ def scope_plot(fig_queue, stop_event, osc):
         chA_arrMean = np.mean(chA_array, axis=0)
         chA_avgList = chA_arrMean.tolist()
 
-        chA_filtered = bandpass_filter(chA_avgList, 10000000, 20000000, 125000000)
+        chA_filtered = bandpass_filter(chA_avgList, 5000000, 30000000, 125000000)
 
         chA.set_data(times, chA_filtered)
 
@@ -454,6 +454,8 @@ def acq_data(fig_queue, stop_event, xyz, osc):
         
             t_start = time.time()
 
+            #time.sleep(0.1)
+
             osc.runBlockAcquisition(NAVERAGES)
             osc.waitDataReady()
             chA_data = osc.getData(NAVERAGES)#, adc2mVChBMax = osc.getData()
@@ -462,7 +464,7 @@ def acq_data(fig_queue, stop_event, xyz, osc):
             chA_arrMean = np.mean(chA_array, axis=0)
             chA_avgList = chA_arrMean.tolist()
 
-            chA_filtered = bandpass_filter(chA_avgList, 10000000, 20000000, 125000000)
+            chA_filtered = bandpass_filter(chA_avgList, 5000000, 30000000, 125000000)
 
             t_end = time.time()
             t = t_end - t_start

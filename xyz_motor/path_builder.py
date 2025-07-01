@@ -161,8 +161,21 @@ class PathBuilder:
                             y = pos2/1e6
 
                     path.append((x,y,z))
-                dir1 = not dir1
-            dir2 = not dir2
+
+                    # Toggle dir1 only if priority[0] is not 'x'
+                    if self.priority[0] != 'z':
+                        dir1 = not dir1
+
+                # Toggle dir2 only if priority[1] is not 'x'
+                if self.priority[1] != 'z':
+                    dir2 = not dir2
+
+            # Toggle dir3 only if priority[2] is not 'x'
+            if self.priority[2] != 'z':
+                dir3 = not dir3
+                    #path.append((x,y,z))
+                #dir1 = not dir1
+            #dir2 = not dir2
 
 
         
