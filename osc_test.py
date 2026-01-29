@@ -40,7 +40,7 @@ def update(frame):
     chA_arrMean = np.mean(chA_array, axis=0)
     chA_avgList = chA_arrMean.tolist()
 
-    chA_filtered = bandpass_filter(chA_avgList, 600000, 1800000, 125000000)
+    chA_filtered = bandpass_filter(chA_avgList, 500000, 2000000, 125000000)
 
     chA.set_data(times, chA_data[0])
 

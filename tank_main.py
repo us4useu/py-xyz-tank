@@ -150,7 +150,7 @@ def scope_plot(fig_queue, stop_event, osc):
         chA_arrMean = np.mean(chA_array, axis=0)
         chA_avgList = chA_arrMean.tolist()
 
-        chA_filtered = bandpass_filter(chA_avgList, 5000000, 30000000, 125000000)
+        chA_filtered = bandpass_filter(chA_avgList, 3000000, 12000000, 125000000)
 
         chA.set_data(times, chA_filtered)
 
@@ -464,7 +464,7 @@ def acq_data(fig_queue, stop_event, xyz, osc):
             chA_arrMean = np.mean(chA_array, axis=0)
             chA_avgList = chA_arrMean.tolist()
 
-            chA_filtered = bandpass_filter(chA_avgList, 5000000, 30000000, 125000000)
+            chA_filtered = bandpass_filter(chA_avgList, 3000000, 12000000, 125000000)
 
             t_end = time.time()
             t = t_end - t_start

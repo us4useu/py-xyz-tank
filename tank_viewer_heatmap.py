@@ -52,7 +52,8 @@ def main():
     
     waveforms = waveforms[:, NOISE_OFFSET:]
 
-    amplitudes = np.ptp(waveforms, axis=1) / 75 # in MPa
+    amplitudes = np.ptp(waveforms, axis=1) / 84 # in MPa
+    #amplitudes = np.ptp(waveforms, axis=1) / 68 # in MPa
 
     x = 1 * coordinates[:, 0]
     y = 1 * coordinates[:, 1]
